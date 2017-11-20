@@ -12,6 +12,23 @@ class BtsAccount < ActiveRecord::Base
   #validates :memo_key, presence: true
 
   validates_uniqueness_of :remote_ip, conditions: -> {where("created_at > '#{(DateTime.now - 5.minutes).to_s(:db)}'")}, message: "Can't register more than one account per IP in less than 5 minutes"
+  #validate email
+  uri = URI('http://localhost:3333/check?name=' + name)
+  $uniq = false
+  begin
+    response = Net::HTTP.get_response(uri)
+    case response
+    when Net::HTTPSuccess then
+      $uniq = response.body
+    end
+  rescue
+    $uniq = false
+  end
+  validates :name, presence: true, if: :curl_check?
+  def curl_check?
+    $uniq == true
+  end
+  #end of validate
 
   before_create :register_account
 
